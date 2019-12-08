@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title><![CDATA[记一次程序从x86_64 linux平台移植到armv7平台]]></title>
+    <url>%2F2019%2F07%2F05%2F%E8%AE%B0%E4%B8%80%E6%AC%A1%E7%A8%8B%E5%BA%8F%E4%BB%8Ex86_64%E6%9E%B6%E6%9E%84%E7%A7%BB%E6%A4%8D%E5%88%B0armv7%E5%B9%B3%E5%8F%B0%2F</url>
+    <content type="text"><![CDATA[前言最近接了个任务，需要把代码移植到armv7平台，搜寻相关方法，了解到可以利用交叉编译工具如：gcc-linaro-arm-linux-gnueabihf。把自己依赖的第三方库代码和自己代码分别编译就好。后来公司买了个树莓派，我直接在树莓派上编代码了，过程中没有很大的问题，记录下。 1. 确定第三方依赖库是否可以移植我代码确实依赖了不可移植的如mkl库，这是intel指令集相关的，所以要移植到arm肯定不行，于是换kaldi支持的另一种库，openblas。先替换然后让代码正常调用openblas。 2. 编译依赖的第三方库源码我这边依赖了4个库：openfst openblas silk crfpp openfst，crfpp：编译起来很方便，没啥特殊，和其它平台编一样，唯一错误好像crfpp没指定-fPIC。 openblas：这个需要指定指令架构和gfortran编译器，第一次我没指定gfortran虽然也编完了，但是实际它没编lapack和blas，后来编译命令是这样： make TARGET=ARMV7 FC=arm-linux-gnueabihf-gfortran ​ 默认树莓派没装这个gfortran 这个需要自己装的gfortran。 silk 安装也需要指定指令集和cpu如下 make clean all TARGET_CPU=Cortex-A53 TARGET_ARCH=armv7 对于编依赖库都是跟着readme来的，幸好这些依赖库都支持跨平台编译 3. 编译运行自己代码编译这些库装完，接下来就是编译自己代码，我这边编译只遇到了一些头文件缺失问题，比如silk在arm平台需要多加相应头文件，再如链接缺失问题，类似gfortran选项，这是因为项目换用openblas引起的，编译阶段问题不好预估和自己代码有关，遇到了及时解决就行。 运行编完就知道不会这么顺利，果然运行出现问题，段错误。这时候不要慌，gdb调试下，我遇到这个段错误当时bt查看调用栈信息时刚开始由于多线程看不出来，后来改成非线程调用可以清楚看到调用到openfst崩溃，联想到版本问题，后来重新编其它版本，代码正常运行。]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>跨平台移植</tag>
+        <tag>任务总结</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[性能分析工具小试]]></title>
+    <url>%2F2019%2F06%2F29%2F%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90%E5%B7%A5%E5%85%B7%E5%B0%8F%E8%AF%95%2F</url>
+    <content type="text"><![CDATA[说明：想快速知道程序哪里比较耗时，但是又不想在每个函数或者诸多代码块加时间统计。最近两天尝试了以下工具。 perf安装 sudo yum install perf* 注：这个也可以用源码安装，比如我系统目录：/usr/src/kernels/3.10.0-862.el7.x86_64/tools/perf 这里边直接带有perf 使用首先编译debug版程序，比如编译了test程序，然后使用如下命令 perf record -g -e cpu-clock ./test test_parm1 这时候程序正常结束的会自动生成perf.data 文件。这个文件还是需要借助perf来看，如下 perf report 内容大概如下： 总结从上图可以看清楚时间主要消耗在哪里，不过perf看起来还是不够清楚，而且函数调用不够深（我没仔细研究，可能还有其它参数设置。） valgrind安装可以去valgrind 官网 http://valgrind.org/downloads/current.html 下载，安装步骤可以看REDME，安装很方便，我当时没出问题。 使用这里只操作生成调用关系图，tool还包含内存检查等其它组件，具体使用可以查资料。 例如：我有如下带参数的siggle-main程序，使用以下命令，当程序正常退出时可以生成callgrind.out.xxx文件： valgrind –tool=callgrind ./bin/single-main ./models/ ./data/wav_list.txt test.out 此文件拷贝到windows平台然后借助图形工具kcachegrind 打开，去官网下载：http://kcachegrind.sourceforge.net/html/Download.html 打开内容如下，函数调用，时间消耗清晰明了： 总结实际还试了gprof工具，感觉还是valgrind用起来方便，主要函数调用关系它画的很深，突然觉得这下借助来看kaldi源码会很方便，哈哈。]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>valgrind</tag>
+        <tag>性能分析</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title><![CDATA[记，初心有二]]></title>
+    <url>%2F2019%2F06%2F28%2F%E8%AE%B0%EF%BC%8C%E5%88%9D%E5%BF%83%E6%9C%89%E4%BA%8C%2F</url>
+    <content type="text"><![CDATA[2019年，自己已过28岁生日。想想做程序开发四年，一直以来总是从网上索取，很是惭愧。于是从今天起，将会践行分享精神，希望律己，更希望可以和大家分享工作中的所得。 有时总想写点什么，比如记一次难忘旅行，记一段难忘的工作……所以以后当我有想说的话时我也会上来写写，记录下时光。]]></content>
+      <categories>
+        <category>生活</category>
+      </categories>
+  </entry>
+</search>
